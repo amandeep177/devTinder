@@ -1,26 +1,42 @@
 const express = require("express");
 const app = express();
 
+const {adminAuth,userAuth} = require("./middlewares/auth");
 
-app.get("/user",
+app.get("/user/login",    // i fo not require auth for login
     (req,res,next)=>{
     
+       res.send(" logging in")
+    
+})
+
+app.get("/user", userAuth,
+    (req,res,next)=>{
+    
+       res.send(" response of user")
+    
+})
+
+app.use("/admin",adminAuth)
+
+app.use("/admin",(req,res,next)=>{
+    const token = "xyz";
+    const isAdminAuthorised = token === "xyz";
+    if(!isAdminAuthorised){
+        res.status(401).send("Unauthorised request")
+    }else{
         next();
-    
-},
- (req,res,next)=>{
-    console.log("in response 2");
-    
-    next()
- },
- (req,res,next)=>{
-     next();
-     
- },
- (req,res)=>{
-     res.send("Response 4")
- },
-)
+    }
+})
+
+app.get("/admin/getAllData",(req,res )=>{
+    res.send(" getting the data")
+})
+
+app.get("/admin/deleteAllData",(req,res)=>{
+    res.send("deleting the data")
+})
+
 // app.post("/user",(req,res)=>{
 //     res.send("data saved")
 // })
