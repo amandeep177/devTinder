@@ -1,57 +1,37 @@
 const express = require("express");
+const {connectDB} = require("./config/database")
 const app = express();
+const Usermodel = require("./models/user")
 
-const {adminAuth,userAuth} = require("./middlewares/auth");
 
-app.get("/user/login",    // i fo not require auth for login
-    (req,res,next)=>{
-    
-       res.send(" logging in")
-    
-})
+app.post("/signup", async (req,res)=>{
 
-app.get("/user", userAuth,
-    (req,res,next)=>{
-    
-       res.send(" response of user")
-    
-})
+    // creating a new instance of the usermodel
+    const user = new Usermodel({
+        firstName:"virat",
+        lastName : "kohli",
+        emailId : "firaniboy@gmail.com",
+        password : "mereanushka",
+    });
 
-app.use("/admin",adminAuth)
-
-app.use("/admin",(req,res,next)=>{
-    const token = "xyz";
-    const isAdminAuthorised = token === "xyz";
-    if(!isAdminAuthorised){
-        res.status(401).send("Unauthorised request")
-    }else{
-        next();
+    try{
+        await user.save();
+        res.send("user addded succesfully")
+    }catch{
+        res.status(400).send("some error occured")
     }
+
 })
 
-app.get("/admin/getAllData",(req,res )=>{
-    res.send(" getting the data")
-})
+connectDB()
+    .then(() => {
+        console.log("Database connection established");
+        app.listen(5000,()=>{
+            console.log("Server running on port 5000...");
+            
+        })
 
-app.get("/admin/deleteAllData",(req,res)=>{
-    res.send("deleting the data")
-})
-
-// app.post("/user",(req,res)=>{
-//     res.send("data saved")
-// })
-
-// app.get("/*fly$", (req,res)=>{
-//     res.send("namaste hello regex")
-// })
-
-
-// app.use("/", (req,res)=>{
-//     res.send("welcome on dashboard")
-// })
-
-
-app.listen(3000,()=>{
-    console.log("Server running on port 7777...");
-    
-})
+    })
+    .catch((err) => {
+        console.error("Database cannot be connected!!")
+    })
