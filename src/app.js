@@ -44,8 +44,8 @@ app.post("/signup", async (req, res) => {
     try {
         await user.save();
         res.send("user addded succesfully")
-    } catch {
-        res.status(400).send("some error occured")
+    } catch(err) {
+        res.status(400).send("some error occured"+ err.message)
     }
 
 })
@@ -65,14 +65,22 @@ app.delete("/user", async (req,res)=>{
     }
 })
 
-app.patch("/user", async (req,res)=>{
-    const userId = req.body._id
+app.patch("/user/:userId", async (req,res)=>{
+    const userId = req.params?.userId
     const data = req.body;
     try{
-        const user = await Usermodel.findByIdAndUpdate(userId,data,{returnDocument:"after"})  // by default before
+        const ALLOWED_UPDATES = ["photoUrl","about","password","gender","skills","age"];
+        const isUpdaateAllowed = Object.keys(data).every((k)=> ALLOWED_UPDATES.includes(k));
+        if(!isUpdaateAllowed){
+            throw new Error("updata is not allowed")
+        }
+        if(data?.skills?.length >10){
+            throw new Error(" max 10 skills allowed ")
+        }
+        const user = await Usermodel.findByIdAndUpdate(userId,data,{returnDocument:"after",runValidators:true})  // by default before
         res.send(user)
-    }catch{
-        res.status(400).send("some error occured")
+    }catch(err){
+        res.status(400).send("update failed :"+  err.message)
     }
 
 })
