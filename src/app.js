@@ -2,8 +2,14 @@ const express = require("express");
 const { connectDB } = require("./config/database")
 const app = express();
 const Usermodel = require("./models/user")
+const {validateSignupData} = require("./utils/validation")
+const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/user", async (req, res) => {
     const userEmail = req.body.emailId
@@ -31,23 +37,81 @@ app.get("/feed", async (req, res) => {
         res.send(users);
 
     } catch (err) {
-        res.status(400).send("something went wrong")
+        res.status(400).send("something went wrong :"+ err.message)
     }
 })
 
 
 app.post("/signup", async (req, res) => {
 
-    // creating a new instance of the usermodel
-    const user = new Usermodel(req.body);
-
+   
     try {
+        validateSignupData(req);
+        const{firstName,lastName,emailId,password}=req.body;
+        
+        // encrypt the password
+        const passwordHash = await bcrypt.hash(password,10);
+
+        // creating a new instance of the usermodel
+        const user = new Usermodel({
+            firstName,lastName,emailId,
+            password:passwordHash,
+            
+        });
+    
         await user.save();
         res.send("user addded succesfully")
     } catch(err) {
-        res.status(400).send("some error occured"+ err.message)
+        res.status(400).send("some error occured "+ err.message)
     }
 
+})
+
+app.post("/login", async (req,res)=>{
+    try{
+        const {emailId,password} = req.body;
+        const user = await Usermodel.findOne({emailId:emailId});
+        if(!user){
+            throw new Error("Invalid Credentials")
+        }
+        const isPasswordValid = await bcrypt.compare(password,user.password);
+        if(!isPasswordValid){
+            throw new Error("Invalid Credentials:password")
+
+        }else{
+            // create a JWT token
+            const token = await jwt.sign({_id:user._id},"Dev123456@")
+
+            // add the token to cookie and send the response back to the user
+            res.cookie("token",token);
+            res.send("Login succesfull")
+        }
+
+
+    }catch(err){
+        res.status(400).send("ERROR: "+ err.message);
+    }
+})
+
+app.get("/profile", async (req,res)=>{
+try{
+
+    const {token} = req.cookies;
+    if(!token){
+        throw new Error("Invalid token")
+    }
+    const decodedmessage = await jwt.verify(token,"Dev123456@")
+    console.log(decodedmessage);
+    const {_id}= decodedmessage;
+    const user =  await Usermodel.findById(_id);
+    if(!user){
+        throw new Error("user not found")
+    }
+    res.send(user);
+}catch(err){
+    res.status(400).send("ERROR: "+ err.message);
+}
+    
 })
 
 app.delete("/user", async (req,res)=>{
