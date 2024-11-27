@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
         required:true,
         unique:true,
         lowercase:true,
-        trim:true,
+        trim:true,  // Mongoose will add a custom setter that removes leading and trailing whitespace using JavaScript's built-in String#trim().
         validate(value){
             if(!validator.isEmail(value)){
                 throw new Error("not valid email"+ value)

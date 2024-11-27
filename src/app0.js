@@ -10,9 +10,10 @@ app0.get("/user/login",    // i fo not require auth for login
     
 })
 
-app0.get("/user", userAuth,
+app0.get("/user/:userId", userAuth,
     (req,res,next)=>{
-    
+       console.log(req.params);
+       
        res.send(" response of user")
     
 })

@@ -3,14 +3,24 @@ const { connectDB } = require("./config/database")
 const app = express();
 const Usermodel = require("./models/user")
 const {validateSignupData} = require("./utils/validation")
-const bcrypt = require("bcrypt");
+
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
-const {userAuth}= require("./middlewares/auth")
+
 
 
 app.use(express.json());
 app.use(cookieParser());
+
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const requestRouter = require("./routes/request");
+
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestRouter);
+
+
 
 // app.get("/user", async (req, res) => {
 //     const userEmail = req.body.emailId
@@ -43,75 +53,10 @@ app.use(cookieParser());
 // })
 
 
-app.post("/signup", async (req, res) => {
-
-   
-    try {
-        validateSignupData(req);
-        const{firstName,lastName,emailId,password}=req.body;
-        
-        // encrypt the password
-        const passwordHash = await bcrypt.hash(password,10);
-
-        // creating a new instance of the usermodel
-        const user = new Usermodel({
-            firstName,lastName,emailId,
-            password:passwordHash,
-            
-        });
-    
-        await user.save();
-        res.send("user addded succesfully")
-    } catch(err) {
-        res.status(400).send("some error occured "+ err.message)
-    }
-
-})
-
-app.post("/login", async (req,res)=>{
-    try{
-        const {emailId,password} = req.body;
-        const user = await Usermodel.findOne({emailId:emailId});
-        if(!user){
-            throw new Error("Invalid Credentials")
-        }
-        const isPasswordValid = await user.validatePassword(password)
-        if(!isPasswordValid){
-            throw new Error("Invalid Credentials:password")
-
-        }else{
-            // create a JWT token
-            const token = await user.getJWT();
-
-            // add the token to cookie and send the response back to the user
-            res.cookie("token",token 
-                , {expires: new Date(Date.now() + 8 * 3600000) // cookie will be removed after 8 hours
-                     });
-            res.send("Login succesfull")
-        }
 
 
-    }catch(err){
-        res.status(400).send("ERROR: "+ err.message);
-    }
-})
 
-app.get("/profile", userAuth, async (req,res)=>{
-try{
-    const user = req.user;
-    res.send(user);
-}catch(err){
-    res.status(400).send("ERROR: "+ err.message);
-}
-    
-})
 
-app.post("/sendConnectionRequest", userAuth, async(req,res)=>{
-    const user = req.user;
-    console.log("sending the connection request");
-    res.send( user.firstName + " sent thee connection request");
-    
-})
 
 // app.delete("/user", async (req,res)=>{
  
@@ -158,5 +103,5 @@ connectDB()
 
     })
     .catch((err) => {
-        console.error("Database cannot be connected!!")
+        console.error("Database cannot be connected!")
     })
