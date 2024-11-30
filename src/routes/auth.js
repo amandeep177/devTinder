@@ -11,14 +11,14 @@ authRouter.post("/signup", async (req, res) => {
    
     try {
         validateSignupData(req);
-        const{firstName,lastName,emailId,password}=req.body;
+        const{firstName,lastName,emailId,password,age,gender}=req.body;
         
         // encrypt the password
         const passwordHash = await bcrypt.hash(password,10);
 
         // creating a new instance of the usermodel
         const user = new Usermodel({
-            firstName,lastName,emailId,
+            firstName,lastName,emailId,age,gender,
             password:passwordHash,
             
         });
@@ -56,6 +56,26 @@ authRouter.post("/login", async (req,res)=>{
 
     }catch(err){
         res.status(400).send("ERROR: "+ err.message);
+    }
+})
+
+authRouter.post("/logout", async (req,res)=>{
+    try{
+
+        // res.clearCookie('token', {
+        //     httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+        //     secure: true,   // Ensures the cookie is sent over HTTPS only
+        //     sameSite: 'Strict', // Restricts cross-site requests
+        // });
+
+        res.cookie("token",null
+            , {expires: new Date(Date.now()) // cookie will be removed just now
+        });
+        res.send("loggedout successfully")
+    }
+    catch(err){
+        res.status(400).send( "error: "+ err);
+
     }
 })
 

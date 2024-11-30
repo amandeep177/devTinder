@@ -36,13 +36,18 @@ const userSchema = new mongoose.Schema({
     age:{
         type:Number,
         min:16,
+        
     },
     gender:{
         type:String,
-        validate(value){
-            if(!["male","female","others"].includes(value)){  // this validate function will only work on new insertion of data. if we want validata at updata we have to handle patch function
-                throw new Error("gender data is invalid")
-            }
+        // validate(value){
+        //     if(!["male","female","others"].includes(value)){  // this validate function will only work on new insertion of data. if we want validata at updata we have to handle patch function
+        //         throw new Error("gender data is invalid")
+        //     }
+        // },
+        enum:{
+            values: ["male","female","others"],
+            message: `{VALUE} is invalid`,
         },
     },
     photoUrl:{
